@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Notifications{% endblock %}
+{% block content %}
+<div class="page-head"><h4><i class="bi bi-bell"></i> Notifications</h4>
+  <form method="POST" action="{{ url_for('account.read_all') }}">{{ csrf_input() }}<button class="btn btn-sm btn-outline-primary">Mark all as read</button></form></div>
+<div class="card-soft">
+  {% for n in items %}
+  <a href="{{ url_for('account.open_notification', nid=n.id) }}" class="d-flex gap-3 p-3 border-bottom text-decoration-none text-reset {{ '' if n.is_read else 'bg-primary-subtle' }}">
+    <i class="bi bi-{{ {'interview':'calendar-check','offer':'envelope-paper','forum':'chat-dots','risk':'exclamation-triangle','application':'briefcase'}.get(n.kind,'bell') }} fs-5 text-primary"></i>
+    <div class="flex-grow-1"><div class="{{ '' if n.is_read else 'fw-semibold' }}">{{ n.message }}</div>
+      <div class="text-muted small">{{ n.created_at.strftime('%d %b %Y, %H:%M') }}</div></div>
+    {% if not n.is_read %}<span class="badge bg-primary align-self-center">New</span>{% endif %}
+  </a>
+  {% else %}<p class="text-muted text-center p-5 mb-0">No notifications yet.</p>{% endfor %}
+</div>
+{% endblock %}
