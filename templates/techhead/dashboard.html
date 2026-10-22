@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Tech dashboard{% endblock %}
+{% block content %}
+<div class="page-head"><div><h4><i class="bi bi-hdd-rack"></i> {{ dept.name if dept else 'Team' }} department</h4><div class="sub">Team health, risk and skills for your department</div></div></div>
+<div class="row g-3 mb-3">{% for l, v, c in [('Team size', team_size, 'text-primary'), ('🔴 High risk', high, ''), ('Avg performance', avg_perf|string + '/5', ''), ('Avg satisfaction', avg_sat|string + '/4', ''), ('Overtime rate', overtime_pct|string + '%', '')] %}
+  <div class="col-6 col-xl"><div class="kpi-card"><div class="kpi-label">{{ l }}</div><div class="kpi-value {{ c }}">{{ v }}</div></div></div>{% endfor %}</div>
+<div class="row g-3"><div class="col-lg-7"><div class="card-soft p-3"><h6 class="fw-bold">Team members</h6><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Name</th><th>Role</th><th>Perf.</th><th>Risk</th><th></th></tr></thead><tbody>
+  {% for e, p in members %}<tr><td class="fw-semibold">{{ e.name }}</td><td class="small">{{ e.job_role }}</td><td>{{ e.performance_rating }}/5</td><td>{% if p %}<span class="badge badge-risk-{{ p.risk_level }}">{{ p.risk_score }}</span>{% else %}—{% endif %}</td><td class="text-end"><a href="{{ url_for('techhead.employee_detail', emp_id=e.id) }}">Open</a></td></tr>{% endfor %}</tbody></table></div></div></div>
+  <div class="col-lg-5"><div class="card-soft p-3 mb-3"><h6 class="fw-bold">Risk mix</h6><div class="chart-box sm"><canvas id="mix"></canvas></div></div>
+    <div class="card-soft p-3"><h6 class="fw-bold">Skills matrix</h6>{% for s, l in skills %}<div class="d-flex justify-content-between small border-bottom py-1"><span>{{ s }}</span><span class="text-muted">✅ {{ l.advanced }} · ⚠️ {{ l.basic }} · ❌ {{ l.none }}</span></div>{% endfor %}
+    <h6 class="fw-bold mt-3">Open roles</h6>{% for j in open_jobs %}<div class="small border-bottom py-1">{{ j.title }}</div>{% else %}<div class="small text-muted">None right now.</div>{% endfor %}</div></div></div>
+{% endblock %}
+{% block scripts %}<script>new Chart(mix,{type:'doughnut',data:{labels:['Low','Medium','High'],datasets:[{data:{{ levels|tojson }},backgroundColor:['#30a46c','#f5a524','#e5484d'],borderWidth:0}]},options:{maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom'}}}});</script>{% endblock %}
