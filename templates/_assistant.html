@@ -1,0 +1,15 @@
+<div class="assistant-root">
+  <div class="chat-log mb-2">
+    <div class="chat-bubble chat-bot">Hi {{ current_user.name.split()[0] }}! I answer from your live HR data. Try a question below.</div>
+  </div>
+  <div class="chat-chips mb-2">
+    <span class="chip" data-q="Which department has the highest attrition risk?">Highest-risk department</span>
+    <span class="chip" data-q="Show employees with high attrition risk and low job satisfaction">High risk + low satisfaction</span>
+    <span class="chip" data-q="What are the top reasons employees may leave?">Top attrition drivers</span>
+    <span class="chip" data-q="Show the attrition trend">Attrition trend</span>
+  </div>
+  <form class="d-flex gap-2" autocomplete="off">
+    <input type="text" name="q" class="form-control form-control-sm" maxlength="300" placeholder="Ask the AI assistant…" aria-label="Ask the AI assistant">
+    <button class="btn btn-sm btn-primary" aria-label="Send"><i class="bi bi-send"></i></button>
+  </form>
+</div>

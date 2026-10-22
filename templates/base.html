@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf-token" content="{{ csrf_token() }}">
+<title>{% block title %}RetainIQ{% endblock %} · RetainIQ AI Attrition &amp; Retention</title>
+<script>try{var t=localStorage.getItem('retainiq-theme');if(t)document.documentElement.setAttribute('data-bs-theme',t);}catch(e){}</script>
+<link href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+{% if current_user.is_authenticated %}
+<nav class="navbar navbar-expand-xl navbar-dark app-navbar sticky-top">
+  <div class="container-fluid px-lg-4">
+    <a class="navbar-brand fw-bold d-flex align-items-center" href="{{ url_for('auth.dashboard') }}">
+      <span class="brand-mark"><i class="bi bi-cpu-fill"></i></span>RetainIQ
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMain" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="navMain">
+      <ul class="navbar-nav me-auto gap-xl-1">
+        {% for it in nav_items %}
+          {% if it.children %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"><i class="bi bi-{{ it.icon }}"></i> {{ it.label }}</a>
+            <ul class="dropdown-menu">
+              {% for c in it.children %}<li><a class="dropdown-item" href="{{ url_for(c.endpoint) }}"><i class="bi bi-{{ c.icon }} me-1"></i> {{ c.label }}</a></li>{% endfor %}
+            </ul>
+          </li>
+          {% else %}
+          <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == it.endpoint }}" href="{{ url_for(it.endpoint) }}"><i class="bi bi-{{ it.icon }}"></i> {{ it.label }}</a></li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+      <ul class="navbar-nav align-items-xl-center gap-1">
+        <li class="nav-item"><a class="nav-link" href="#" onclick="toggleTheme();return false;" title="Toggle dark mode"><i id="themeIcon" class="bi bi-moon-stars"></i></a></li>
+        <li class="nav-item dropdown">
+          <a class="nav-link position-relative" href="#" role="button" data-bs-toggle="dropdown" aria-label="Notifications">
+            <i class="bi bi-bell fs-5"></i>
+            {% if nav_unread_count %}<span class="badge rounded-pill bg-danger notif-badge">{{ nav_unread_count }}</span>{% endif %}
+          </a>
+          <div class="dropdown-menu dropdown-menu-end notif-dropdown p-2">
+            <div class="d-flex justify-content-between align-items-center px-2 pb-1">
+              <strong class="small">Notifications</strong>
+              {% if nav_unread_count %}<a href="#" class="small" onclick="markAllRead();return false;">Mark all read</a>{% endif %}
+            </div>
+            {% for n in nav_notifications %}
+              <a class="dropdown-item small text-wrap rounded" href="{{ url_for('account.open_notification', nid=n.id) }}">
+                <i class="bi bi-{{ {'interview':'calendar-check','offer':'envelope-paper','forum':'chat-dots','risk':'exclamation-triangle','application':'briefcase'}.get(n.kind,'bell') }} me-1 text-primary"></i>{{ n.message }}
+                <div class="text-muted" style="font-size:.7rem">{{ n.created_at.strftime('%d %b, %H:%M') }}</div>
+              </a>
+            {% else %}
+              <div class="dropdown-item-text small text-muted px-2 py-2">You're all caught up 🎉</div>
+            {% endfor %}
+            <hr class="my-1"><a class="dropdown-item small text-center" href="{{ url_for('account.notifications') }}">View all notifications</a>
+          </div>
+        </li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown">
+            <span class="avatar">{{ current_user.initials }}</span>
+            <span class="d-xl-inline">{{ current_user.name.split()[0] }} <span class="badge bg-secondary-subtle text-secondary-emphasis ms-1">{{ current_user.role_label }}</span></span>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="{{ url_for('account.profile') }}"><i class="bi bi-person-badge me-1"></i> My account</a></li>
+            <li><a class="dropdown-item" href="{{ url_for('account.password') }}"><i class="bi bi-key me-1"></i> Change password</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><form method="post" action="{{ url_for('auth.logout') }}">{{ csrf_input() }}<button class="dropdown-item"><i class="bi bi-box-arrow-right me-1"></i> Sign out</button></form></li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+{% endif %}
+
+<main class="container-fluid px-lg-4 py-3">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
+    {% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="app-foot">RetainIQ v2.0 · AI Attrition &amp; Retention Predictor · Data is synthetic demo data</footer>
+
+{% if current_user.is_authenticated and can_assistant and request.endpoint != 'hr.dashboard' %}
+<button class="btn btn-primary rounded-circle shadow position-fixed" style="right:22px;bottom:22px;width:54px;height:54px;z-index:1040" data-bs-toggle="offcanvas" data-bs-target="#assistantPanel" aria-label="Open AI assistant"><i class="bi bi-robot fs-4"></i></button>
+<div class="offcanvas offcanvas-end" tabindex="-1" id="assistantPanel">
+  <div class="offcanvas-header"><h6 class="offcanvas-title fw-bold"><i class="bi bi-robot"></i> AI HR Assistant</h6><button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button></div>
+  <div class="offcanvas-body">{% include '_assistant.html' %}</div>
+</div>
+{% endif %}
+
+<script src="{{ url_for('static', filename='vendor/bootstrap/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.js') }}"></script>
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/assistant.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

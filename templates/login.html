@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+<div class="auth-wrap" style="position:fixed;inset:0;z-index:2000;overflow:auto">
+  <div class="card auth-card p-4">
+    <div class="text-center mb-3">
+      <span class="brand-mark" style="width:54px;height:54px;border-radius:16px;font-size:1.6rem"><i class="bi bi-cpu-fill"></i></span>
+      <h3 class="fw-bold mt-3 mb-0">RetainIQ</h3>
+      <div class="text-muted small">AI Attrition &amp; Retention Predictor</div>
+    </div>
+    {% for category, message in get_flashed_messages(with_categories=true) %}
+      <div class="alert alert-{{ category }} py-2 small">{{ message }}</div>
+    {% endfor %}
+    <form method="POST" novalidate>
+      {{ csrf_input() }}
+      <div class="mb-3"><label class="form-label small text-muted" for="email">Email</label>
+        <input type="email" class="form-control form-control-lg" id="email" name="email" required autofocus autocomplete="username" placeholder="you@retainiq.com"></div>
+      <div class="mb-3"><label class="form-label small text-muted" for="password">Password</label>
+        <input type="password" class="form-control form-control-lg" id="password" name="password" required autocomplete="current-password" placeholder="••••••••"></div>
+      <button type="submit" class="btn btn-primary btn-lg w-100">Sign in</button>
+    </form>
+    <div class="text-center mt-3 small">New to RetainIQ? <a href="{{ url_for('auth.register') }}">Create an account</a></div>
+  </div>
+</div>
+{% endblock %}

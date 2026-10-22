@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Create account{% endblock %}
+{% block content %}
+<div class="auth-wrap" style="position:fixed;inset:0;z-index:2000;overflow:auto">
+  <div class="card auth-card p-4" style="max-width:500px">
+    <div class="text-center mb-3">
+      <span class="brand-mark" style="width:48px;height:48px;border-radius:14px;font-size:1.4rem"><i class="bi bi-cpu-fill"></i></span>
+      <h4 class="fw-bold mt-2 mb-0">Create your RetainIQ account</h4>
+      <div class="text-muted small">Employees can join instantly; staff roles need an access code</div>
+    </div>
+    {% for category, message in get_flashed_messages(with_categories=true) %}<div class="alert alert-{{ category }} py-2 small">{{ message }}</div>{% endfor %}
+    <form method="POST" novalidate>
+      {{ csrf_input() }}
+      <div class="mb-2"><label class="form-label small text-muted">Full name</label><input class="form-control" name="name" required maxlength="120" value="{{ form.get('name','') }}"></div>
+      <div class="mb-2"><label class="form-label small text-muted">Email</label><input type="email" class="form-control" name="email" required value="{{ form.get('email','') }}" placeholder="you@retainiq.com"></div>
+      <div class="row g-2 mb-2">
+        <div class="col-6"><label class="form-label small text-muted">Password</label><input type="password" class="form-control" name="password" required minlength="8" autocomplete="new-password"></div>
+        <div class="col-6"><label class="form-label small text-muted">Confirm</label><input type="password" class="form-control" name="confirm" required minlength="8" autocomplete="new-password"></div>
+      </div>
+      <div class="form-text mb-2">At least 8 characters, with a letter and a number.</div>
+      <div class="mb-2"><label class="form-label small text-muted">I am signing up as</label>
+        <select class="form-select" name="role" id="roleSelect" onchange="toggleCode()">{% for v, l in role_choices %}<option value="{{ v }}" {{ 'selected' if form.get('role')==v }}>{{ l }}</option>{% endfor %}</select></div>
+      <div class="mb-2" id="codeField" style="display:none"><label class="form-label small text-muted">Staff access code</label>
+        <input class="form-control" name="access_code" placeholder="Provided by your administrator"><div class="form-text">Prevents anyone from self-promoting to HR, CEO or Administrator.</div></div>
+      <div class="mb-3"><label class="form-label small text-muted">Department (optional)</label>
+        <select class="form-select" name="department_id"><option value="">— Not set —</option>{% for d in departments %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}</select></div>
+      <button class="btn btn-primary btn-lg w-100">Create account</button>
+    </form>
+    <div class="text-center mt-3 small">Already registered? <a href="{{ url_for('auth.login') }}">Sign in</a></div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}<script>function toggleCode(){document.getElementById('codeField').style.display=document.getElementById('roleSelect').value==='employee'?'none':'block';}toggleCode();</script>{% endblock %}
