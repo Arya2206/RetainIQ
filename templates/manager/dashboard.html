@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}My team{% endblock %}
+{% block content %}
+<div class="page-head"><div><h4><i class="bi bi-people"></i> My team</h4><div class="sub">Direct reports only · risk scores are confidential to you and HR</div></div></div>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3"><div class="kpi-card"><div class="kpi-label">Team size</div><div class="kpi-value text-primary">{{ rows|length }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="kpi-card"><div class="kpi-label">🔴 High risk</div><div class="kpi-value" style="color:var(--risk-high)">{{ high|length }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="kpi-card"><div class="kpi-label">Avg performance</div><div class="kpi-value">{{ avg_perf }}<span class="fs-6 text-muted">/5</span></div></div></div>
+  <div class="col-6 col-lg-3"><div class="kpi-card"><div class="kpi-label">Open retention actions</div><div class="kpi-value">{{ open_actions }}</div></div></div>
+</div>
+<div class="row g-3"><div class="col-lg-8"><div class="card-soft p-3"><h6 class="fw-bold mb-2">Team members</h6><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Name</th><th>Role</th><th>Performance</th><th style="width:200px">AI risk</th><th></th></tr></thead><tbody>
+  {% for e, p in rows %}<tr><td class="fw-semibold">{{ e.name }}</td><td class="small">{{ e.job_role }}</td><td>{{ e.performance_rating }}/5</td>
+    <td>{% if p %}<div class="d-flex align-items-center gap-2"><div class="bar-track flex-grow-1"><div class="bar-fill" style="width:{{ p.risk_score }}%;background:{{ '#e5484d' if p.risk_score>=60 else ('#f5a524' if p.risk_score>=30 else '#30a46c') }}"></div></div><span class="badge badge-risk-{{ p.risk_level }}">{{ p.risk_score }}</span></div>{% else %}—{% endif %}</td>
+    <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('manager.employee_detail', emp_id=e.id) }}">Open</a></td></tr>
+  {% else %}<tr><td colspan="5" class="text-center text-muted py-4">No direct reports are assigned to you yet. An administrator can assign them.</td></tr>{% endfor %}</tbody></table></div></div></div>
+  <div class="col-lg-4"><div class="card-soft p-3 h-100"><h6 class="fw-bold">Performance distribution</h6><div class="chart-box sm"><canvas id="perf"></canvas></div></div></div></div>
+{% endblock %}
+{% block scripts %}<script>new Chart(perf,{type:'bar',data:{labels:['1★','2★','3★','4★','5★'],datasets:[{data:{{ perf_dist|tojson }},backgroundColor:'#4f6ef7',borderRadius:6}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});</script>{% endblock %}
