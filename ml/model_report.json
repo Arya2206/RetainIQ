@@ -1,0 +1,288 @@
+{
+  "metrics": {
+    "model_name": "Logistic Regression",
+    "model_version": "3.0",
+    "accuracy": 0.8225,
+    "precision": 0.5714,
+    "recall": 0.7262,
+    "f1": 0.6396,
+    "roc_auc": 0.8791,
+    "pr_auc": 0.7026,
+    "brier": 0.1069,
+    "cv_auc_mean": 0.8502,
+    "cv_auc_std": 0.0128,
+    "majority_baseline_accuracy": 0.7831,
+    "decision_threshold": 0.3,
+    "high_threshold": 0.6,
+    "confusion_matrix": {
+      "tn": 1064,
+      "fp": 189,
+      "fn": 95,
+      "tp": 252
+    },
+    "roc_curve": {
+      "fpr": [
+        0.0,
+        0.0032,
+        0.0104,
+        0.0184,
+        0.0215,
+        0.0263,
+        0.0327,
+        0.0391,
+        0.0431,
+        0.0567,
+        0.0607,
+        0.0686,
+        0.0758,
+        0.083,
+        0.0902,
+        0.0974,
+        0.1038,
+        0.1109,
+        0.1197,
+        0.1261,
+        0.1397,
+        0.1468,
+        0.1556,
+        0.1708,
+        0.1828,
+        0.1995,
+        0.2075,
+        0.2219,
+        0.237,
+        0.2642,
+        0.2785,
+        0.2929,
+        0.3312,
+        0.3703,
+        0.4038,
+        0.4206,
+        0.5116,
+        0.593,
+        0.7422,
+        1.0
+      ],
+      "tpr": [
+        0.0,
+        0.1412,
+        0.2478,
+        0.2911,
+        0.317,
+        0.3573,
+        0.4092,
+        0.4352,
+        0.4582,
+        0.487,
+        0.5072,
+        0.5389,
+        0.5591,
+        0.5879,
+        0.611,
+        0.6254,
+        0.6398,
+        0.6599,
+        0.6744,
+        0.6916,
+        0.7089,
+        0.7205,
+        0.7464,
+        0.7579,
+        0.781,
+        0.7925,
+        0.8069,
+        0.8271,
+        0.8415,
+        0.8559,
+        0.8732,
+        0.8876,
+        0.8991,
+        0.9164,
+        0.928,
+        0.9424,
+        0.9539,
+        0.9683,
+        0.9798,
+        1.0
+      ]
+    },
+    "calibration": {
+      "predicted": [
+        0.0105,
+        0.0275,
+        0.0518,
+        0.0917,
+        0.155,
+        0.2598,
+        0.4222,
+        0.715
+      ],
+      "observed": [
+        0.0,
+        0.045,
+        0.03,
+        0.055,
+        0.135,
+        0.265,
+        0.45,
+        0.755
+      ]
+    },
+    "lift": [
+      {
+        "top_pct": 5,
+        "precision": 0.925,
+        "recall": 0.2133,
+        "lift": 4.27
+      },
+      {
+        "top_pct": 10,
+        "precision": 0.7937,
+        "recall": 0.366,
+        "lift": 3.66
+      },
+      {
+        "top_pct": 20,
+        "precision": 0.65,
+        "recall": 0.5994,
+        "lift": 3.0
+      },
+      {
+        "top_pct": 30,
+        "precision": 0.55,
+        "recall": 0.7608,
+        "lift": 2.54
+      }
+    ],
+    "economics": {
+      "flagged_pct": 27.6,
+      "net_value_per_100": 2.99,
+      "leavers_per_100": 21.7,
+      "assumptions": {
+        "intervention_cost": 0.12,
+        "success_rate": 0.4
+      }
+    },
+    "fairness": {
+      "attribute": "Age band",
+      "groups": [
+        {
+          "group": "<30",
+          "n": 345,
+          "flag_rate": 0.2928,
+          "actual_rate": 0.2145,
+          "recall": 0.7568,
+          "avg_risk": 22.1
+        },
+        {
+          "group": "30-39",
+          "n": 699,
+          "flag_rate": 0.2575,
+          "actual_rate": 0.2132,
+          "recall": 0.7047,
+          "avg_risk": 20.7
+        },
+        {
+          "group": "40-49",
+          "n": 458,
+          "flag_rate": 0.286,
+          "actual_rate": 0.2118,
+          "recall": 0.7423,
+          "avg_risk": 22.1
+        },
+        {
+          "group": "50+",
+          "n": 98,
+          "flag_rate": 0.2959,
+          "actual_rate": 0.2755,
+          "recall": 0.7037,
+          "avg_risk": 24.6
+        }
+      ],
+      "min_max_flag_ratio": 0.87,
+      "passes_four_fifths": true,
+      "note": "Age is excluded from the model; this audit checks for indirect bias."
+    },
+    "comparison": [
+      {
+        "model": "Logistic Regression",
+        "cv_auc_mean": 0.8502,
+        "cv_auc_std": 0.0128,
+        "cv_pr_auc": 0.6275,
+        "cv_brier": 0.1191,
+        "accuracy": 0.8225,
+        "precision": 0.5714,
+        "recall": 0.7262,
+        "f1": 0.6396,
+        "roc_auc": 0.8791,
+        "pr_auc": 0.7026,
+        "brier": 0.1069
+      },
+      {
+        "model": "Random Forest",
+        "cv_auc_mean": 0.8326,
+        "cv_auc_std": 0.0093,
+        "cv_pr_auc": 0.5934,
+        "cv_brier": 0.1262,
+        "accuracy": 0.8287,
+        "precision": 0.5995,
+        "recall": 0.634,
+        "f1": 0.6162,
+        "roc_auc": 0.8674,
+        "pr_auc": 0.6643,
+        "brier": 0.1146
+      },
+      {
+        "model": "Gradient Boosting",
+        "cv_auc_mean": 0.8405,
+        "cv_auc_std": 0.0132,
+        "cv_pr_auc": 0.6135,
+        "cv_brier": 0.1223,
+        "accuracy": 0.8237,
+        "precision": 0.5783,
+        "recall": 0.6916,
+        "f1": 0.6299,
+        "roc_auc": 0.8745,
+        "pr_auc": 0.6831,
+        "brier": 0.1101
+      }
+    ],
+    "n_train": 6400,
+    "n_test": 1600,
+    "positive_rate": 0.2167,
+    "features": [
+      "MonthlySalary",
+      "YearsAtCompany",
+      "JobSatisfaction",
+      "WorkLifeBalance",
+      "OverTime",
+      "PerformanceRating",
+      "YearsSincePromotion",
+      "TrainingTimesLastYear",
+      "DistanceFromHome",
+      "NumCompaniesWorked",
+      "SalaryHikePercent"
+    ],
+    "excluded_features": [
+      "Age"
+    ],
+    "trained_at": "2026-10-22 05:29 UTC",
+    "environment": {
+      "scikit_learn": "1.9.0",
+      "python": "3.14.7"
+    }
+  },
+  "feature_importances": {
+    "MonthlySalary": 0.03159,
+    "YearsAtCompany": 0.00509,
+    "JobSatisfaction": 0.06417,
+    "WorkLifeBalance": 0.02708,
+    "OverTime": 0.04749,
+    "PerformanceRating": 0.00385,
+    "YearsSincePromotion": 0.03231,
+    "TrainingTimesLastYear": 0.01378,
+    "DistanceFromHome": 0.00558,
+    "NumCompaniesWorked": 0.0102,
+    "SalaryHikePercent": 0.0351
+  }
+}
