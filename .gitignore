@@ -1,0 +1,5 @@
+instance/
+uploads/*
+!uploads/.gitkeep
+__pycache__/
+*.pkl
