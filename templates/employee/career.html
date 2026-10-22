@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Career growth{% endblock %}
+{% block content %}
+<div class="page-head"><div><h4><i class="bi bi-graph-up-arrow"></i> Career growth</h4><div class="sub">Current role: <strong>{{ emp.job_role if emp }}</strong></div></div></div>
+<div class="row g-3"><div class="col-lg-4"><div class="card-soft p-3 mb-3"><h6 class="fw-bold">My skills</h6>
+  {% for s, lvl in skills.items() %}<div class="d-flex justify-content-between align-items-center border-bottom py-2"><span>{{ s }}</span><span>{{ level_icon[lvl] }} <span class="small text-muted">{{ lvl }}</span></span></div>{% else %}<p class="text-muted small mb-0">No skills on file. Add them from <a href="{{ url_for('employee.dashboard') }}">My profile</a>.</p>{% endfor %}
+  <div class="small text-muted mt-2">✅ advanced &nbsp; ⚠️ basic &nbsp; ❌ none</div></div>
+  <div class="card-soft p-3"><h6 class="fw-bold">Biggest skill gaps</h6>{% for s, n in gaps %}<div class="d-flex justify-content-between small border-bottom py-1"><span>{{ s }}</span><span class="text-muted">needed in {{ n }} role(s)</span></div>{% else %}<p class="small text-muted mb-0">No gaps found.</p>{% endfor %}</div></div>
+<div class="col-lg-8">
+  {% if rec %}<div class="card-soft p-3 mb-3 pin"><h6 class="fw-bold">🤖 AI recommendation</h6><p class="mb-2">“{{ rec.text }}”</p><div class="small text-muted"><i class="bi bi-mortarboard"></i> Suggested learning path: {{ rec.path }}</div></div>{% endif %}
+  <div class="card-soft p-3"><h6 class="fw-bold">Relevant internal opportunities</h6>
+    {% for pct, j in ranked %}<div class="border-bottom py-2"><div class="d-flex justify-content-between"><div><strong>{{ j.title }}</strong><div class="small text-muted">{{ j.department.name if j.department }} · needs {{ j.required_skills }}</div></div>
+      <div class="text-end" style="min-width:110px"><div class="small fw-semibold" style="color:{{ '#30a46c' if pct>=70 else ('#f5a524' if pct>=40 else '#e5484d') }}">{{ pct }}% match</div><div class="bar-track mt-1"><div class="bar-fill" style="width:{{ pct }}%;background:{{ '#30a46c' if pct>=70 else ('#f5a524' if pct>=40 else '#e5484d') }}"></div></div></div></div></div>
+    {% else %}<p class="text-muted small mb-0">No open opportunities.</p>{% endfor %}
+    <a class="btn btn-primary btn-sm mt-3" href="{{ url_for('employee.opportunities') }}">View &amp; apply</a></div></div></div>
+{% endblock %}

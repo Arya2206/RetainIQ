@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}My offers{% endblock %}
+{% block content %}
+<div class="page-head"><h4><i class="bi bi-envelope-paper"></i> My offers</h4></div>
+<div class="row g-3">{% for o in items %}<div class="col-md-6"><div class="card-soft p-4"><div class="d-flex justify-content-between"><h6 class="fw-bold">{{ o.application.opportunity.title }}</h6><span class="badge bg-{{ 'success' if o.status=='accepted' else ('secondary' if o.status=='declined' else 'warning text-dark') }}">{{ o.status }}</span></div>
+  <div class="display-6 fw-bold my-2">{{ o.offered_salary|inr }}<span class="fs-6 text-muted"> / month</span></div><div class="text-muted small mb-3">Offered {{ o.created_at.strftime('%d %b %Y') }}</div>
+  {% if o.status == 'pending' %}<form method="POST" action="{{ url_for('employee.respond_offer', offer_id=o.id) }}" class="d-flex gap-2">{{ csrf_input() }}<button name="decision" value="accept" class="btn btn-success">Accept offer</button><button name="decision" value="decline" class="btn btn-outline-danger">Decline</button></form>{% endif %}</div></div>
+{% else %}<p class="text-muted">No offers yet.</p>{% endfor %}</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}My interviews{% endblock %}
+{% block content %}
+<div class="page-head"><h4><i class="bi bi-calendar-check"></i> My interviews</h4></div>
+<div class="card-soft p-3"><table class="table align-middle mb-0"><thead><tr><th>Role</th><th>When</th><th>Interviewer</th><th>Result</th><th>Feedback</th></tr></thead><tbody>
+{% for iv in items %}<tr><td class="fw-semibold">{{ iv.application.opportunity.title }}</td><td>{{ iv.scheduled_at.strftime('%d %b %Y, %H:%M') if iv.scheduled_at }} {% if iv.scheduled_at and iv.scheduled_at > now and iv.result=='pending' %}<span class="badge bg-info text-dark">upcoming</span>{% endif %}</td><td>{{ iv.interviewer }}</td>
+  <td><span class="badge bg-{{ 'success' if iv.result=='pass' else ('danger' if iv.result=='fail' else 'secondary') }}">{{ iv.result }}</span></td><td class="small text-muted">{{ iv.feedback or '—' }}</td></tr>
+{% else %}<tr><td colspan="5" class="text-center text-muted py-4">No interviews yet.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

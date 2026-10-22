@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "employee/_stepper.html" import stepper %}
+{% block title %}My profile{% endblock %}
+{% block content %}
+<div class="page-head"><div><h4><i class="bi bi-person"></i> Welcome, {{ current_user.name.split()[0] }}</h4><div class="sub">{{ emp.job_role if emp }} · {{ emp.department.name if emp and emp.department }}</div></div></div>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3"><div class="kpi-card"><div class="kpi-label">Open opportunities</div><div class="kpi-value text-primary">{{ open_jobs }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="kpi-card"><div class="kpi-label">My applications</div><div class="kpi-value">{{ apps|length }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="kpi-card"><div class="kpi-label">Upcoming interviews</div><div class="kpi-value" style="color:var(--risk-medium)">{{ upcoming|length }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="kpi-card"><div class="kpi-label">Offers waiting</div><div class="kpi-value text-success">{{ pending_offers }}</div></div></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-7"><div class="card-soft p-3 mb-3"><div class="d-flex justify-content-between"><h6 class="fw-bold">My application tracker</h6><a href="{{ url_for('employee.applications') }}" class="small">All →</a></div>
+    {% for a in apps %}<div class="border-bottom py-2"><div class="d-flex justify-content-between"><strong class="small">{{ a.opportunity.title }}</strong><span class="badge bg-primary-subtle text-primary-emphasis">{{ a.status_label }}</span></div>{{ stepper(a, flow, labels) }}</div>
+    {% else %}<p class="text-muted small mb-0">You haven't applied anywhere yet. <a href="{{ url_for('employee.opportunities') }}">Browse opportunities</a>.</p>{% endfor %}</div>
+    {% if emp %}<div class="card-soft p-3"><h6 class="fw-bold"><i class="bi bi-pencil-square"></i> Update my profile</h6>
+      <form method="POST" action="{{ url_for('employee.update_profile') }}" class="row g-2">{{ csrf_input() }}
+        <div class="col-md-4"><label class="form-label small text-muted">Job role</label><input class="form-control form-control-sm" name="job_role" value="{{ emp.job_role or '' }}" maxlength="120"></div>
+        <div class="col-md-4"><label class="form-label small text-muted">Job satisfaction (1–4)</label><select class="form-select form-select-sm" name="job_satisfaction">{% for v in [1,2,3,4] %}<option {{ 'selected' if emp.job_satisfaction==v }}>{{ v }}</option>{% endfor %}</select></div>
+        <div class="col-md-4"><label class="form-label small text-muted">Work-life balance (1–4)</label><select class="form-select form-select-sm" name="work_life_balance">{% for v in [1,2,3,4] %}<option {{ 'selected' if emp.work_life_balance==v }}>{{ v }}</option>{% endfor %}</select></div>
+        <div class="col-12"><label class="form-label small text-muted">Skills — <code>Skill:level</code>, comma separated (advanced / basic / none)</label><input class="form-control form-control-sm" name="skills" value="{{ emp.skills or '' }}" placeholder="Python:advanced,SQL:basic"></div>
+        <div class="col-12"><button class="btn btn-sm btn-primary">Save profile</button></div></form></div>{% endif %}</div>
+  <div class="col-lg-5"><div class="card-soft p-3 mb-3"><h6 class="fw-bold"><i class="bi bi-calendar-check"></i> Upcoming interviews</h6>
+    {% for iv in upcoming %}<div class="border-bottom py-2 small"><strong>{{ iv.application.opportunity.title }}</strong><div class="text-muted">{{ 'Tomorrow' if (iv.scheduled_at.date() - today).days == 1 else ('Today' if (iv.scheduled_at.date() - today).days == 0 else iv.scheduled_at.strftime('%d %b')) }} at {{ iv.scheduled_at.strftime('%H:%M') }} · with {{ iv.interviewer }}</div></div>
+    {% else %}<p class="text-muted small mb-0">Nothing scheduled.</p>{% endfor %}</div>
+    <div class="card-soft p-3"><h6 class="fw-bold">Quick links</h6><div class="d-grid gap-2">
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('employee.career') }}"><i class="bi bi-graph-up-arrow"></i> Career growth &amp; skills</a>
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('employee.opportunities') }}"><i class="bi bi-briefcase"></i> Browse opportunities</a>
+      <a class="btn btn-outline-primary btn-sm" href="{{ url_for('forum.index') }}"><i class="bi bi-chat-dots"></i> Community forum</a></div></div></div>
+</div>
+{% endblock %}

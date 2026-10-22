@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Opportunities{% endblock %}
+{% block content %}
+<div class="page-head"><h4><i class="bi bi-briefcase"></i> Internal opportunities</h4></div>
+<div class="row g-3">{% for pct, j in jobs %}<div class="col-md-6 col-xl-4"><div class="card-soft p-3 h-100 d-flex flex-column">
+  <div class="d-flex justify-content-between"><h6 class="fw-bold">{{ j.title }}</h6><span class="badge" style="background:{{ '#30a46c' if pct>=70 else ('#f5a524' if pct>=40 else '#e5484d') }}">{{ pct }}% match</span></div>
+  <div class="text-muted small mb-2">{{ j.department.name if j.department }}</div><p class="small flex-grow-1">{{ j.description }}</p>
+  <div class="small mb-3"><span class="text-muted">Skills:</span> {{ j.required_skills }}</div>
+  {% if j.id in applied %}<button class="btn btn-sm btn-outline-secondary" disabled>Already applied</button>{% else %}<form method="POST" action="{{ url_for('employee.apply', opp_id=j.id) }}">{{ csrf_input() }}<button class="btn btn-sm btn-primary w-100">Apply now</button></form>{% endif %}</div></div>
+{% else %}<p class="text-muted">No open opportunities right now.</p>{% endfor %}</div>
+{% endblock %}
