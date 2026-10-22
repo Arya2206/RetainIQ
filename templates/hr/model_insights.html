@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Model insights{% endblock %}
+{% block content %}
+{% set fa = m.fairness %}
+<div class="page-head"><div><h4><i class="bi bi-bar-chart-line"></i> Model insights</h4><div class="sub">How the attrition model was built, how well it performs on unseen data, and whether it is fair</div></div></div>
+<div class="alert alert-warning small"><i class="bi bi-info-circle"></i> The model is trained on a <strong>synthetic</strong> HR dataset ({{ m.n_train + m.n_test }} records, {{ (m.positive_rate*100)|round(1) }}% attrition rate) generated from well-known attrition drivers. Replace it with your company's real history before relying on it for decisions. Model v{{ m.model_version }}, trained {{ m.trained_at }}.</div>
+
+<div class="row g-3 mb-3">
+  {% for l, v, tip in [('Selected model', m.model_name, 'Chosen automatically by cross-validated ROC-AUC'),
+                       ('ROC-AUC', m.roc_auc, 'Ability to rank leavers above stayers (0.5 = coin flip)'),
+                       ('PR-AUC', m.pr_auc, 'Precision/recall trade-off; more honest than ROC when few people leave'),
+                       ('Recall', (m.recall*100)|round(1)|string + '%', 'Share of real leavers the model flags'),
+                       ('Precision', (m.precision*100)|round(1)|string + '%', 'Share of flagged people who really would leave'),
+                       ('Brier score', m.brier, 'Probability error; lower is better (0 = perfect)')] %}
+  <div class="col-6 col-md-4 col-xl-2"><div class="kpi-card" title="{{ tip }}"><div class="kpi-label">{{ l }}</div><div class="kpi-value" style="font-size:{{ '1.2rem' if loop.first else '1.85rem' }}">{{ v }}</div></div></div>{% endfor %}
+</div>
+<div class="small text-muted mb-3"><i class="bi bi-lightbulb"></i> Accuracy is {{ (m.accuracy*100)|round(1) }}% versus {{ (m.majority_baseline_accuracy*100)|round(1) }}% for a model that simply predicts "nobody leaves" — that is why accuracy alone is not used to judge this model. Employees are flagged at ≥ {{ (m.decision_threshold*100)|round|int }}% predicted probability, the break-even point where expected savings exceed the cost of a retention conversation.</div>
+
+<div class="row g-3">
+  <div class="col-lg-6"><div class="card-soft p-3 h-100"><h6 class="fw-bold">Model comparison (5-fold CV + hold-out test)</h6><div class="table-responsive"><table class="table table-sm mb-0"><thead><tr><th>Algorithm</th><th>CV AUC</th><th>Test AUC</th><th>PR-AUC</th><th>Recall</th><th>Brier</th></tr></thead><tbody>
+    {% for c in m.comparison %}<tr class="{{ 'table-primary' if c.model==m.model_name }}"><td>{{ c.model }}{% if c.model==m.model_name %} <span class="badge bg-primary">selected</span>{% endif %}</td><td>{{ c.cv_auc_mean }} ± {{ c.cv_auc_std }}</td><td>{{ c.roc_auc }}</td><td>{{ c.pr_auc }}</td><td>{{ c.recall }}</td><td>{{ c.brier }}</td></tr>{% endfor %}</tbody></table></div>
+    <div class="small text-muted mt-2">All models are probability-calibrated the same way, so scores on the dashboard behave like real probabilities.</div></div></div>
+  <div class="col-lg-6"><div class="card-soft p-3 h-100"><h6 class="fw-bold">What drives attrition (permutation importance)</h6><div class="chart-box"><canvas id="imp"></canvas></div></div></div>
+
+  <div class="col-lg-6"><div class="card-soft p-3 h-100"><h6 class="fw-bold">Is a "40" really 40%? (calibration)</h6><div class="chart-box"><canvas id="cal"></canvas></div>
+    <div class="small text-muted mt-2">Points on the dashed line mean predicted risk matches what actually happened to employees in the hold-out set.</div></div></div>
+  <div class="col-lg-6"><div class="card-soft p-3 h-100"><h6 class="fw-bold">If HR can only talk to the riskiest few…</h6>
+    <table class="table table-sm mb-2"><thead><tr><th>Top % of employees</th><th>Real leavers among them</th><th>Leavers reached</th><th>Lift</th></tr></thead><tbody>
+      {% for r in m.lift %}<tr><td>{{ r.top_pct }}%</td><td>{{ (r.precision*100)|round|int }}%</td><td>{{ (r.recall*100)|round|int }}%</td><td><strong>{{ r.lift }}×</strong></td></tr>{% endfor %}</tbody></table>
+    <div class="small text-muted">Lift compares against picking people at random. With a {{ (m.positive_rate*100)|round|int }}% base attrition rate, a 3× lift means 3 in 5 of those contacted would genuinely have left.</div>
+    {% set ec = m.economics %}<div class="mt-3 p-2 rounded-3" style="background:rgba(48,164,108,.14)"><div class="small fw-semibold">Retention economics (per 100 employees)</div>
+      <div class="small">Flagging {{ ec.flagged_pct }}% of staff nets about <strong>{{ ec.net_value_per_100 }} replacement-costs saved</strong>, assuming an intervention costs {{ (ec.assumptions.intervention_cost*100)|round|int }}% of a replacement and keeps {{ (ec.assumptions.success_rate*100)|round|int }}% of at-risk leavers.</div></div></div></div>
+
+  <div class="col-lg-5"><div class="card-soft p-3 h-100"><h6 class="fw-bold">Confusion matrix (test set, n={{ m.n_test }})</h6>
+    <div class="row g-2 text-center mt-1"><div class="col-6"><div class="p-3 rounded-3" style="background:rgba(48,164,108,.18)"><div class="fs-3 fw-bold">{{ m.confusion_matrix.tn }}</div><div class="small">True negatives<br><span class="text-muted">stayed, predicted stay</span></div></div></div>
+      <div class="col-6"><div class="p-3 rounded-3" style="background:rgba(245,165,36,.2)"><div class="fs-3 fw-bold">{{ m.confusion_matrix.fp }}</div><div class="small">False positives<br><span class="text-muted">stayed, flagged at risk</span></div></div></div>
+      <div class="col-6"><div class="p-3 rounded-3" style="background:rgba(245,165,36,.2)"><div class="fs-3 fw-bold">{{ m.confusion_matrix.fn }}</div><div class="small">False negatives<br><span class="text-muted">left, not flagged</span></div></div></div>
+      <div class="col-6"><div class="p-3 rounded-3" style="background:rgba(48,164,108,.18)"><div class="fs-3 fw-bold">{{ m.confusion_matrix.tp }}</div><div class="small">True positives<br><span class="text-muted">left, correctly flagged</span></div></div></div></div></div></div>
+  <div class="col-lg-7"><div class="card-soft p-3 h-100"><h6 class="fw-bold">ROC curve</h6><div class="chart-box"><canvas id="roc"></canvas></div></div></div>
+
+  {% if fa %}<div class="col-12"><div class="card-soft p-3"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2"><h6 class="fw-bold mb-0"><i class="bi bi-shield-check"></i> Fairness audit by {{ fa.attribute|lower }}</h6>
+      <span class="badge bg-{{ 'success' if fa.passes_four_fifths else 'warning' }}">{{ 'Within four-fifths guideline' if fa.passes_four_fifths else 'Review recommended' }} · ratio {{ fa.min_max_flag_ratio }}</span></div>
+    <div class="table-responsive mt-2"><table class="table table-sm mb-1"><thead><tr><th>Group</th><th>Employees</th><th>Flagged</th><th>Actually left</th><th>Leavers caught</th><th>Avg risk</th></tr></thead><tbody>
+      {% for g in fa.groups %}<tr><td>{{ g.group }}</td><td>{{ g.n }}</td><td>{{ (g.flag_rate*100)|round(1) }}%</td><td>{{ (g.actual_rate*100)|round(1) }}%</td><td>{{ ((g.recall or 0)*100)|round(1) }}%</td><td>{{ g.avg_risk }}</td></tr>{% endfor %}</tbody></table></div>
+    <div class="small text-muted">{{ fa.note }} Age is stored only for this audit and is never used to score an employee. Scores support a conversation with the employee — they should never be the sole basis for pay, promotion or dismissal decisions.</div></div></div>{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}<script>
+new Chart(document.getElementById('imp'),{type:'bar',data:{labels:{{ importances|map(attribute=0)|list|tojson }},datasets:[{data:{{ importances|map(attribute=1)|list|tojson }},backgroundColor:'#4f6ef7',borderRadius:5}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'Drop in ROC-AUC when shuffled'}}}}});
+const f={{ m.roc_curve.fpr|tojson }},t={{ m.roc_curve.tpr|tojson }};
+new Chart(document.getElementById('roc'),{type:'line',data:{datasets:[{label:'Model (AUC {{ m.roc_auc }})',data:f.map((x,i)=>({x:x,y:t[i]})),borderColor:'#7c5cfc',backgroundColor:'rgba(124,92,252,.15)',fill:true,pointRadius:0,tension:.2},{label:'Random guess',data:[{x:0,y:0},{x:1,y:1}],borderColor:'#9aa3b8',borderDash:[5,5],pointRadius:0}]},options:{maintainAspectRatio:false,parsing:false,scales:{x:{type:'linear',min:0,max:1,title:{display:true,text:'False positive rate'}},y:{min:0,max:1,title:{display:true,text:'True positive rate'}}},plugins:{legend:{position:'bottom'}}}});
+const cp={{ m.calibration.predicted|tojson }},co={{ m.calibration.observed|tojson }};
+new Chart(document.getElementById('cal'),{type:'line',data:{datasets:[{label:'Model',data:cp.map((x,i)=>({x:x,y:co[i]})),borderColor:'#30a46c',backgroundColor:'#30a46c',pointRadius:4,tension:0},{label:'Perfectly calibrated',data:[{x:0,y:0},{x:1,y:1}],borderColor:'#9aa3b8',borderDash:[5,5],pointRadius:0}]},options:{maintainAspectRatio:false,parsing:false,scales:{x:{type:'linear',min:0,max:1,title:{display:true,text:'Predicted probability'}},y:{min:0,max:1,title:{display:true,text:'Observed attrition rate'}}},plugins:{legend:{position:'bottom'}}}});
+</script>{% endblock %}

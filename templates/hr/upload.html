@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Excel upload{% endblock %}
+{% block content %}
+<div class="page-head"><div><h4><i class="bi bi-file-earmark-excel"></i> Excel → AI pipeline</h4><div class="sub">Upload → Validate → Clean → Analyse → Predict → Classify → Recommend → Dashboard</div></div></div>
+<div class="row g-3">
+  <div class="col-lg-5"><div class="card-soft p-4">
+    <h6 class="fw-bold mb-3">Upload employee_data.xlsx</h6>
+    <form method="POST" enctype="multipart/form-data">{{ csrf_input() }}
+      <input class="form-control mb-3" type="file" name="file" accept=".xlsx" required>
+      <button class="btn btn-primary w-100"><i class="bi bi-upload"></i> Upload &amp; run AI pipeline</button></form>
+    <a href="{{ url_for('hr.upload_template') }}" class="btn btn-outline-secondary btn-sm w-100 mt-2"><i class="bi bi-download"></i> Download sample workbook (includes a few deliberate errors)</a>
+    <div class="alert alert-info small mt-3 mb-0"><strong>Required columns:</strong><br><code>{{ required|join(', ') }}</code><br>Maximum 5,000 rows · .xlsx only. Missing values are filled with the department median; out-of-range values are clipped; invalid rows are rejected and listed in the report.</div></div></div>
+  <div class="col-lg-7"><div class="card-soft p-4 mb-3"><h6 class="fw-bold mb-3">What the pipeline does</h6>
+    <div class="pipeline">{% for s, d in [('Upload','Read the workbook safely'),('Validate','Columns, emails, duplicates'),('Clean','Impute, clip, normalise'),('Analyse','Build employee profiles'),('Predict','ML attrition probability'),('Classify','Low / Medium / High'),('Recommend','Factors + retention actions')] %}
+      <div class="pipe-stage"><span class="num">{{ loop.index }}</span><div class="fw-semibold small">{{ s }}</div><div class="text-muted" style="font-size:.74rem">{{ d }}</div></div>{% endfor %}</div></div>
+    <div class="card-soft p-3"><h6 class="fw-bold">Recent uploads</h6><table class="table table-sm mb-0"><thead><tr><th>File</th><th>When</th><th>Rows</th><th>High risk</th><th></th></tr></thead><tbody>
+      {% for b in batches %}<tr><td class="small">{{ b.filename }}</td><td class="small text-muted">{{ b.created_at.strftime('%d %b %H:%M') }}</td><td>{{ b.rows_valid }}/{{ b.rows_total }}</td><td><span class="badge badge-risk-High">{{ b.high_risk }}</span></td><td class="text-end"><a href="{{ url_for('hr.upload_result', batch_id=b.id) }}">Report</a></td></tr>
+      {% else %}<tr><td colspan="5" class="text-muted text-center py-3">No uploads yet.</td></tr>{% endfor %}</tbody></table></div></div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Pipeline report{% endblock %}
+{% block content %}
+<div class="page-head"><div><h4><i class="bi bi-check2-circle text-success"></i> Pipeline complete</h4><div class="sub">{{ b.filename }} · {{ b.created_at.strftime('%d %b %Y, %H:%M') }} UTC · by {{ b.uploader.name if b.uploader }}</div></div>
+  <a href="{{ url_for('hr.dashboard') }}" class="btn btn-primary btn-sm">Open dashboard →</a></div>
+<div class="alert alert-success d-flex align-items-center gap-3"><i class="bi bi-cpu fs-3"></i><div><strong class="fs-5">{{ b.rows_valid }} employees analysed</strong><br><span class="fs-6">{{ b.high_risk }} high-risk employees detected</span></div></div>
+<div class="card-soft p-3 mb-3"><div class="pipeline">{% for s in rep.stages %}<div class="pipe-stage"><span class="num">{{ loop.index }}</span><div class="fw-semibold small">{{ s.name }}</div><div class="text-muted" style="font-size:.76rem">{{ s.detail }}</div></div>{% endfor %}</div></div>
+<div class="row g-3">
+  <div class="col-lg-4"><div class="card-soft p-3 h-100"><h6 class="fw-bold">Data-quality report</h6>
+    <table class="table table-sm mb-0 small"><tbody><tr><td>Rows read</td><td class="text-end">{{ b.rows_total }}</td></tr><tr><td>Accepted</td><td class="text-end text-success">{{ b.rows_valid }}</td></tr><tr><td>Rejected</td><td class="text-end text-danger">{{ b.rows_rejected }}</td></tr>
+      <tr><td>Duplicate emails merged</td><td class="text-end">{{ rep.duplicates }}</td></tr><tr><td>New / updated employees</td><td class="text-end">{{ b.employees_created }} / {{ b.employees_updated }}</td></tr>
+      {% for c, n in rep.missing_filled.items() %}<tr><td>Missing <code>{{ c }}</code> filled</td><td class="text-end">{{ n }}</td></tr>{% endfor %}
+      {% for c, n in rep.clipped.items() %}<tr><td>Out-of-range <code>{{ c }}</code> clipped</td><td class="text-end">{{ n }}</td></tr>{% endfor %}
+      {% for c, n in (rep.inconsistent or {}).items() %}<tr><td>Inconsistent: {{ c }}</td><td class="text-end">{{ n }}</td></tr>{% endfor %}</tbody></table></div></div>
+  <div class="col-lg-4"><div class="card-soft p-3 h-100"><h6 class="fw-bold">Risk classification</h6><div class="chart-box sm"><canvas id="c"></canvas></div></div></div>
+  <div class="col-lg-4"><div class="card-soft p-3 h-100"><h6 class="fw-bold">Rejected rows</h6>
+    {% for r in rep.rejected %}<div class="small border-bottom py-1"><span class="badge bg-danger-subtle text-danger-emphasis">Row {{ r.row }}</span> {{ r.reason }}</div>{% else %}<p class="text-muted small mb-0">No rows were rejected 🎉</p>{% endfor %}</div></div>
+  {% set dr = rep.drift or {} %}{% if dr.available %}
+  <div class="col-12"><div class="card-soft p-3"><div class="d-flex justify-content-between align-items-center flex-wrap gap-2"><h6 class="fw-bold mb-0"><i class="bi bi-activity"></i> Data-drift check <span class="text-muted fw-normal small">(vs. data the model was trained on)</span></h6>
+    <span class="badge bg-{{ {'stable':'success','moderate':'warning','major':'danger'}[dr.overall] }}">{{ dr.overall|capitalize }} shift</span></div>
+    <p class="small text-muted mt-2 mb-2">{{ dr.message }}</p>
+    <div class="d-flex flex-wrap gap-2">{% for f in dr.features[:6] %}<span class="badge text-bg-light border" title="Population Stability Index">{{ f.feature }} · PSI {{ f.psi }} <span class="text-{{ {'stable':'success','moderate':'warning','major':'danger'}[f.status] }}">●</span></span>{% endfor %}</div></div></div>
+  {% endif %}
+  <div class="col-12"><div class="card-soft p-3"><h6 class="fw-bold">Highest-risk employees in this upload</h6><table class="table table-sm align-middle mb-0"><tbody>
+    {% for e, p in top %}<tr><td class="fw-semibold">{{ e.name }}</td><td class="small text-muted">{{ e.job_role }} · {{ e.department.name if e.department }}</td><td><span class="badge badge-risk-{{ p.risk_level }}">{{ p.risk_score }} · {{ p.risk_level }}</span></td><td class="text-end"><a href="{{ url_for('hr.employee_detail', emp_id=e.id) }}">Risk card</a></td></tr>{% endfor %}</tbody></table></div></div>
+</div>
+{% endblock %}
+{% block scripts %}<script>new Chart(document.getElementById('c'),{type:'doughnut',data:{labels:['Low','Medium','High'],datasets:[{data:[{{ b.low_risk }},{{ b.medium_risk }},{{ b.high_risk }}],backgroundColor:['#30a46c','#f5a524','#e5484d'],borderWidth:0}]},options:{maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom'}}}});</script>{% endblock %}

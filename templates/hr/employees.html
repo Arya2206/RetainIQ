@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Employees{% endblock %}
+{% block content %}
+<div class="page-head"><div><h4><i class="bi bi-people"></i> Employee management</h4><div class="sub">{{ total }} employee(s) match</div></div>
+  <div class="d-flex gap-2">{% if can('upload_excel') %}<a href="{{ url_for('hr.upload') }}" class="btn btn-primary btn-sm"><i class="bi bi-file-earmark-excel"></i> Upload Excel</a>{% endif %}
+  {% if can('export_reports') %}<a class="btn btn-outline-secondary btn-sm" href="{{ url_for('hr.export_risk', department=dept_filter, risk=risk_filter) }}"><i class="bi bi-download"></i> Export</a>{% endif %}</div></div>
+<form class="card-soft p-3 mb-3 row g-2"><div class="col-md-4"><input name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Search name, role or code"></div>
+  <div class="col-6 col-md-2"><select name="department" class="form-select form-select-sm"><option value="">All departments</option>{% for d in departments %}<option {{ 'selected' if dept_filter==d.name }}>{{ d.name }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-2"><select name="risk" class="form-select form-select-sm"><option value="">All risk levels</option>{% for r in ['High','Medium','Low'] %}<option {{ 'selected' if risk_filter==r }}>{{ r }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-2"><select name="sort" class="form-select form-select-sm">{% for k,l in [('risk','Highest risk'),('name','Name'),('salary','Salary'),('dept','Department')] %}<option value="{{ k }}" {{ 'selected' if sort==k }}>Sort: {{ l }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-2"><button class="btn btn-sm btn-primary w-100">Apply</button></div></form>
+<div class="card-soft p-3"><div class="table-responsive"><table class="table table-sm align-middle mb-2"><thead><tr><th>Employee</th><th>Department</th><th>Monthly salary</th><th style="width:230px">AI risk</th><th></th></tr></thead><tbody>
+{% for e, p in rows %}<tr><td><div class="fw-semibold">{{ e.name }}</div><div class="small text-muted">{{ e.job_role }} · {{ e.employee_code }}</div></td>
+  <td>{{ e.department.name if e.department else '—' }}</td><td>{{ e.monthly_salary|inr }}</td>
+  <td>{% if p %}<div class="d-flex align-items-center gap-2"><div class="bar-track flex-grow-1"><div class="bar-fill" style="width:{{ p.risk_score }}%;background:{{ '#e5484d' if p.risk_score>=60 else ('#f5a524' if p.risk_score>=30 else '#30a46c') }}"></div></div><span class="badge badge-risk-{{ p.risk_level }}">{{ p.risk_score }}</span></div>{% else %}<span class="badge bg-secondary">Not analysed</span>{% endif %}</td>
+  <td class="text-end"><a href="{{ url_for('hr.employee_detail', emp_id=e.id) }}" class="btn btn-sm btn-outline-primary">Risk card</a></td></tr>
+{% else %}<tr><td colspan="5" class="text-center text-muted py-4">No employees match these filters.</td></tr>{% endfor %}</tbody></table></div>
+{% if pages > 1 %}<nav><ul class="pagination pagination-sm mb-0">{% for n in range(1, pages+1) %}<li class="page-item {{ 'active' if n==page }}"><a class="page-link" href="?page={{ n }}&q={{ q }}&department={{ dept_filter }}&risk={{ risk_filter }}&sort={{ sort }}">{{ n }}</a></li>{% endfor %}</ul></nav>{% endif %}</div>
+{% endblock %}
