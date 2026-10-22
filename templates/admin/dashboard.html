@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Administrator{% endblock %}
+{% block content %}
+<div class="page-head"><div><h4><i class="bi bi-speedometer2"></i> System Analytics</h4><div class="sub">Platform health, usage and security at a glance</div></div></div>
+<div class="row g-3 mb-3">
+  {% for label, val, cls in [('Users', total_users, 'text-primary'), ('Employees', total_employees, ''), ('Departments', total_depts, ''), ('Open jobs', open_jobs, 'text-success'), ('Excel uploads', uploads, ''), ('Security events (7d)', failed, 'text-danger' if failed else '')] %}
+  <div class="col-6 col-md-4 col-xl-2"><div class="kpi-card"><div class="kpi-label">{{ label }}</div><div class="kpi-value {{ cls }}">{{ val }}</div></div></div>
+  {% endfor %}
+</div>
+<div class="row g-3">
+  <div class="col-lg-4"><div class="card-soft p-3 h-100"><h6 class="fw-bold">AI risk distribution</h6><div class="chart-box sm"><canvas id="riskChart"></canvas></div></div></div>
+  <div class="col-lg-4"><div class="card-soft p-3 h-100"><h6 class="fw-bold">Users by role</h6><div class="chart-box sm"><canvas id="roleChart"></canvas></div></div></div>
+  <div class="col-lg-4"><div class="card-soft p-3 h-100"><h6 class="fw-bold">Sign-ins, last 14 days</h6><div class="chart-box sm"><canvas id="loginChart"></canvas></div></div></div>
+  <div class="col-12"><div class="card-soft p-3"><div class="d-flex justify-content-between"><h6 class="fw-bold mb-2"><i class="bi bi-clock-history"></i> Recent activity</h6><a class="small" href="{{ url_for('admin.logs') }}">Open audit log →</a></div>
+    <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+    {% for l in recent_activity %}<tr><td class="text-muted small" style="width:150px">{{ l.timestamp.strftime('%d %b, %H:%M') }}</td><td style="width:160px">{{ l.user.name if l.user else 'System' }}</td><td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ l.category }}</span> {{ l.action }}</td></tr>{% endfor %}
+    </tbody></table></div></div></div>
+</div>
+{% endblock %}
+{% block scripts %}<script>
+new Chart(riskChart,{type:'doughnut',data:{labels:['High','Medium','Low'],datasets:[{data:[{{ risk_counts.get('High',0) }},{{ risk_counts.get('Medium',0) }},{{ risk_counts.get('Low',0) }}],backgroundColor:['#e5484d','#f5a524','#30a46c'],borderWidth:0}]},options:{maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom'}}}});
+new Chart(roleChart,{type:'bar',data:{labels:{{ users_by_role.keys()|list|tojson }},datasets:[{data:{{ users_by_role.values()|list|tojson }},backgroundColor:'#4f6ef7',borderRadius:6}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+new Chart(loginChart,{type:'line',data:{labels:{{ login_days|tojson }},datasets:[{data:{{ login_counts|tojson }},borderColor:'#7c5cfc',backgroundColor:'rgba(124,92,252,.15)',fill:true,tension:.35}]},options:{maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{ticks:{maxTicksLimit:7}}}}});
+</script>{% endblock %}
