@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Offers{% endblock %}
+{% block content %}
+<div class="page-head"><h4><i class="bi bi-envelope-paper"></i> Offers</h4><div class="btn-group btn-group-sm">{% for k, l in [('', 'All'), ('pending', 'Pending'), ('accepted', 'Accepted'), ('declined', 'Declined')] %}<a class="btn btn-outline-primary {{ 'active' if f==k }}" href="?status={{ k }}">{{ l }}</a>{% endfor %}</div></div>
+<div class="card-soft p-3"><table class="table table-sm align-middle mb-0"><thead><tr><th>Candidate</th><th>Role</th><th>Monthly salary</th><th>Sent</th><th>Status</th></tr></thead><tbody>
+{% for o in items %}<tr><td class="fw-semibold">{{ o.application.applicant.name }}</td><td>{{ o.application.opportunity.title }}</td><td>{{ o.offered_salary|inr }}</td><td class="small text-muted">{{ o.created_at.strftime('%d %b %Y') }}</td><td><span class="badge bg-{{ 'success' if o.status=='accepted' else ('secondary' if o.status=='declined' else 'warning text-dark') }}">{{ o.status }}</span></td></tr>
+{% else %}<tr><td colspan="5" class="text-center text-muted py-4">No offers.</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

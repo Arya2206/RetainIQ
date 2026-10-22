@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Candidates · {{ opp.title }}{% endblock %}
+{% block content %}
+<a href="{{ url_for('recruiter.dashboard') }}" class="small">← Back</a>
+<div class="page-head mt-1"><div><h4>{{ opp.title }}</h4><div class="sub">Candidate screening · skills: {{ opp.required_skills }}</div></div></div>
+<div class="row g-3">{% for a in apps %}<div class="col-lg-6"><div class="card-soft p-3">
+  <div class="d-flex justify-content-between"><div><h6 class="fw-bold mb-0">{{ a.applicant.name }}</h6><div class="small text-muted">{{ a.applicant.employee_profile.job_role if a.applicant.employee_profile }} · applied {{ a.applied_at.strftime('%d %b') }}</div></div><span class="badge bg-primary-subtle text-primary-emphasis align-self-start">{{ a.status_label }}</span></div>
+  {% if can('review_applications') and a.status in ('submitted','under_review','shortlisted') %}
+  <form method="POST" action="{{ url_for('recruiter.review', app_id=a.id) }}" class="d-flex gap-2 mt-2">{{ csrf_input() }}
+    {% if a.status == 'submitted' %}<button name="status" value="under_review" class="btn btn-sm btn-outline-primary">Start review</button>{% endif %}
+    {% if a.status == 'under_review' %}<button name="status" value="shortlisted" class="btn btn-sm btn-primary">Shortlist</button>{% endif %}
+    <button name="status" value="rejected" class="btn btn-sm btn-outline-danger">Reject</button></form>{% endif %}
+  {% if can('schedule_interviews') and a.status in ('shortlisted','interview') %}
+  <form method="POST" action="{{ url_for('recruiter.schedule_interview', app_id=a.id) }}" class="row g-1 mt-2">{{ csrf_input() }}<div class="col-5"><input name="interviewer" class="form-control form-control-sm" placeholder="Interviewer" required></div><div class="col-5"><input type="datetime-local" name="scheduled_at" class="form-control form-control-sm" required></div><div class="col-2"><button class="btn btn-sm btn-outline-dark w-100">Book</button></div></form>{% endif %}
+  {% for iv in a.interviews %}<form method="POST" action="{{ url_for('recruiter.interview_feedback', iv_id=iv.id) }}" class="border-top pt-2 mt-2">{{ csrf_input() }}
+    <div class="small text-muted mb-1">Interview with {{ iv.interviewer }} · {{ iv.scheduled_at.strftime('%d %b %H:%M') if iv.scheduled_at }}</div>
+    <textarea name="feedback" rows="2" class="form-control form-control-sm mb-1" placeholder="Feedback">{{ iv.feedback or '' }}</textarea>
+    {% if can('schedule_interviews') %}<div class="d-flex gap-1"><select name="result" class="form-select form-select-sm">{% for r in ['pending','pass','fail'] %}<option {{ 'selected' if iv.result==r }}>{{ r }}</option>{% endfor %}</select><button class="btn btn-sm btn-outline-dark">Save</button></div>{% endif %}</form>{% endfor %}
+  {% if a.status == 'selected' and can('send_offers') %}<form method="POST" action="{{ url_for('recruiter.make_offer', app_id=a.id) }}" class="d-flex gap-1 border-top pt-2 mt-2">{{ csrf_input() }}<input type="number" min="1" name="offered_salary" class="form-control form-control-sm" placeholder="Offered monthly salary (₹)" required><button class="btn btn-sm btn-success">Send offer</button></form>
+  {% elif a.offer %}<div class="small border-top pt-2 mt-2">Offer {{ a.offer.offered_salary|inr }} — <span class="badge bg-warning text-dark">{{ a.offer.status }}</span></div>{% endif %}
+</div></div>{% else %}<p class="text-muted">No candidates yet.</p>{% endfor %}</div>
+{% endblock %}

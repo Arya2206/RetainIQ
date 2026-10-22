@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Recruitment{% endblock %}
+{% block content %}
+<div class="page-head"><div><h4><i class="bi bi-briefcase"></i> Recruitment overview</h4><div class="sub">Opportunity → Apply → Review → Shortlist → Interview → Feedback → Select → Offer</div></div>
+  {% if can('manage_recruitment') %}<a href="{{ url_for('recruiter.create_opportunity') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-circle"></i> Post opportunity</a>{% endif %}</div>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3"><div class="kpi-card"><div class="kpi-label">Open jobs</div><div class="kpi-value text-success">{{ jobs|selectattr('status','equalto','open')|list|length }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="kpi-card"><div class="kpi-label">Applications</div><div class="kpi-value text-primary">{{ total_apps }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="kpi-card"><div class="kpi-label">Pending interviews</div><div class="kpi-value" style="color:var(--risk-medium)">{{ pending_interviews }}</div></div></div>
+  <div class="col-6 col-lg-3"><div class="kpi-card"><div class="kpi-label">Offers awaiting reply</div><div class="kpi-value">{{ open_offers }}</div></div></div></div>
+<div class="row g-3"><div class="col-lg-4"><div class="card-soft p-3 h-100"><h6 class="fw-bold">Hiring funnel</h6><div class="chart-box"><canvas id="funnel"></canvas></div></div></div>
+  <div class="col-lg-8"><div class="card-soft p-3"><h6 class="fw-bold">Opportunities</h6><div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Title</th><th>Department</th><th>Status</th><th>Applicants</th><th></th></tr></thead><tbody>
+    {% for j in jobs %}<tr><td class="fw-semibold">{{ j.title }}</td><td class="small">{{ j.department.name if j.department }}</td><td><span class="badge bg-{{ 'success' if j.status=='open' else 'secondary' }}">{{ j.status }}</span></td><td>{{ j.applications|length }}</td>
+      <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('recruiter.candidates', opp_id=j.id) }}">Candidates</a>
+      {% if can('manage_recruitment') %}<form method="POST" action="{{ url_for('recruiter.toggle_opportunity', opp_id=j.id) }}" class="d-inline">{{ csrf_input() }}<button class="btn btn-sm btn-outline-secondary">{{ 'Close' if j.status=='open' else 'Reopen' }}</button></form>{% endif %}</td></tr>{% endfor %}</tbody></table></div></div></div></div>
+{% endblock %}
+{% block scripts %}<script>new Chart(funnel,{type:'bar',data:{labels:{{ funnel|map(attribute=0)|list|tojson }},datasets:[{data:{{ funnel|map(attribute=1)|list|tojson }},backgroundColor:'#7c5cfc',borderRadius:6}]},options:{indexAxis:'y',maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{beginAtZero:true,ticks:{precision:0}}}}});</script>{% endblock %}
