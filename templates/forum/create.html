@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}New post{% endblock %}
+{% block content %}
+<div class="col-lg-6 mx-auto"><div class="card-soft p-4"><h5 class="fw-bold mb-3"><i class="bi bi-chat-dots"></i> New forum post</h5>
+<form method="POST">{{ csrf_input() }}
+  <div class="mb-3"><label class="form-label small text-muted">Title</label><input class="form-control" name="title" required maxlength="200" value="{{ form.get('title','') }}"></div>
+  <div class="mb-3"><label class="form-label small text-muted">Category</label><select class="form-select" name="category_id">{% for c in categories %}{% if c.name != 'Announcements' or can('post_announcements') %}<option value="{{ c.id }}">#{{ c.name }}{{ ' (pinned for everyone)' if c.name == 'Announcements' }}</option>{% endif %}{% endfor %}</select><div class="form-text">Posts in <strong>AnonymousFeedback</strong> never show your name.</div></div>
+  <div class="mb-3"><label class="form-label small text-muted">Content</label><textarea class="form-control" name="content" rows="6" required maxlength="5000">{{ form.get('content','') }}</textarea></div>
+  <div class="form-check mb-3"><input class="form-check-input" type="checkbox" name="is_anonymous" id="an"><label class="form-check-label small" for="an">Post anonymously</label></div>
+  <button class="btn btn-primary w-100">Publish</button></form></div></div>
+{% endblock %}
