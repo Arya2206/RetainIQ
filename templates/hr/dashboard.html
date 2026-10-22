@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}AI Attrition Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div><h4><i class="bi bi-robot"></i> AI Attrition Dashboard</h4>
+    <div class="sub">Live predictions from the <strong>{{ metrics.model_name }}</strong> model · ROC-AUC {{ metrics.roc_auc }} · catches {{ (metrics.recall*100)|round|int }}% of leavers · calibrated probabilities</div></div>
+  <div class="d-flex gap-2 flex-wrap">
+    {% if can('upload_excel') %}<a href="{{ url_for('hr.upload') }}" class="btn btn-primary btn-sm"><i class="bi bi-file-earmark-excel"></i> Upload Excel</a>{% endif %}
+    {% if can('export_reports') %}<a id="exportBtn" href="{{ url_for('hr.export_risk') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-download"></i> Export CSV</a>{% endif %}
+    <a href="{{ url_for('hr.model_insights') }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-bar-chart-line"></i> Model insights</a></div>
+</div>
+
+<div class="card-soft p-3 mb-3">
+  <form id="filters" class="row g-2 align-items-end">
+    <div class="col-6 col-md-3 col-lg-2"><label class="form-label small text-muted mb-1">Department</label>
+      <select id="fDept" class="form-select form-select-sm"><option value="">All departments</option>{% for d in departments %}<option>{{ d.name }}</option>{% endfor %}</select></div>
+    <div class="col-6 col-md-3 col-lg-2"><label class="form-label small text-muted mb-1">Risk level</label>
+      <select id="fRisk" class="form-select form-select-sm"><option value="">All levels</option><option>High</option><option>Medium</option><option>Low</option></select></div>
+    <div class="col-6 col-md-3 col-lg-2"><label class="form-label small text-muted mb-1">From</label><input type="date" id="fFrom" class="form-control form-control-sm"></div>
+    <div class="col-6 col-md-3 col-lg-2"><label class="form-label small text-muted mb-1">To</label><input type="date" id="fTo" class="form-control form-control-sm" max="{{ today }}"></div>
+    <div class="col-12 col-lg-4 d-flex gap-1 flex-wrap">
+      <button type="button" class="btn btn-sm btn-outline-primary" data-range="3">3M</button>
+      <button type="button" class="btn btn-sm btn-outline-primary" data-range="6">6M</button>
+      <button type="button" class="btn btn-sm btn-outline-primary" data-range="12">12M</button>
+      <button type="button" id="fReset" class="btn btn-sm btn-outline-secondary">Reset</button>
+      <span id="loading" class="small text-muted align-self-center ms-2"></span></div>
+  </form>
+</div>
+
+<div class="row g-3 mb-3" id="kpis">
+  <div class="col-6 col-md-4 col-xl-2"><div class="kpi-card"><div class="kpi-label">Employees</div><div class="kpi-value text-primary" id="kEmp">–</div><div class="kpi-sub" id="kAnalyzed">&nbsp;</div></div></div>
+  <div class="col-6 col-md-4 col-xl-2"><div class="kpi-card"><div class="kpi-label">🔴 High risk</div><div class="kpi-value" style="color:var(--risk-high)" id="kHigh">–</div><div class="kpi-sub" id="kHighPct">&nbsp;</div></div></div>
+  <div class="col-6 col-md-4 col-xl-2"><div class="kpi-card"><div class="kpi-label">Open jobs</div><div class="kpi-value text-success" id="kJobs">–</div><div class="kpi-sub">internal opportunities</div></div></div>
+  <div class="col-6 col-md-4 col-xl-2"><div class="kpi-card"><div class="kpi-label">Avg risk score</div><div class="kpi-value" id="kAvg">–</div><div class="kpi-sub">out of 100</div></div></div>
+  <div class="col-6 col-md-4 col-xl-2"><div class="kpi-card"><div class="kpi-label">Expected attrition cost</div><div class="kpi-value" style="font-size:1.45rem" id="kCost">–</div><div class="kpi-sub">annual, est. 150% of salary</div></div></div>
+  <div class="col-6 col-md-4 col-xl-2"><div class="kpi-card"><div class="kpi-label">Retention plan</div><div class="kpi-value" id="kActs">–</div><div class="kpi-sub" id="kActsSub">&nbsp;</div></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-7"><div class="card-soft p-3 h-100"><div class="d-flex justify-content-between"><h6 class="fw-bold">📈 Attrition trend</h6><span class="small text-muted">avg risk score · high-risk headcount · actual exits</span></div><div class="chart-box"><canvas id="trendChart"></canvas></div></div></div>
+  <div class="col-lg-5"><div class="card-soft p-3 h-100"><h6 class="fw-bold">AI risk distribution</h6>
+    <div class="row align-items-center"><div class="col-6"><div class="chart-box sm"><canvas id="distChart"></canvas></div></div>
+      <div class="col-6" id="distLegend"></div></div></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-5"><div class="card-soft p-3 h-100"><h6 class="fw-bold">Department-wise risk</h6><div class="chart-box" style="height:300px"><canvas id="deptChart"></canvas></div></div></div>
+  <div class="col-lg-7"><div class="card-soft p-3 h-100 d-flex flex-column"><h6 class="fw-bold"><i class="bi bi-robot"></i> AI HR Assistant</h6>
+    {% include '_assistant.html' %}</div></div>
+</div>
+
+<div class="card-soft p-3">
+  <div class="d-flex justify-content-between align-items-center mb-2"><h6 class="fw-bold mb-0">Highest-risk employees <span class="text-muted small" id="topNote"></span></h6><a href="{{ url_for('hr.employees') }}" class="small">All employees →</a></div>
+  <div class="table-responsive"><table class="table table-sm align-middle mb-0"><thead><tr><th>Employee</th><th>Department</th><th>Main driver</th><th style="width:220px">Risk</th><th></th></tr></thead><tbody id="topRows"></tbody></table></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const $ = id => document.getElementById(id);
+let trend, dist, dept;
+const fmtINR = v => v >= 1e7 ? '₹' + (v/1e7).toFixed(2) + ' Cr' : (v >= 1e5 ? '₹' + (v/1e5).toFixed(2) + ' L' : '₹' + Math.round(v).toLocaleString('en-IN'));
+
+function qs(){ const p = new URLSearchParams(); if ($('fDept').value) p.set('dept', $('fDept').value); if ($('fRisk').value) p.set('risk', $('fRisk').value);
+  if ($('fFrom').value) p.set('from', $('fFrom').value); if ($('fTo').value) p.set('to', $('fTo').value); return p; }
+
+async function load(){
+  $('loading').textContent = 'Updating…';
+  const p = qs(); const d = await api('/api/v1/hr/dashboard?' + p.toString());
+  const ex = $('exportBtn'); if (ex){ const e = new URLSearchParams(); if (p.get('dept')) e.set('department', p.get('dept')); if (p.get('risk')) e.set('risk', p.get('risk')); ex.href = '{{ url_for("hr.export_risk") }}?' + e; }
+  const k = d.kpis;
+  $('kEmp').textContent = k.employees; $('kAnalyzed').textContent = k.analyzed + ' analysed by AI';
+  $('kHigh').textContent = k.high; $('kHighPct').textContent = (k.analyzed ? Math.round(100 * k.high / k.analyzed) : 0) + '% of workforce';
+  $('kJobs').textContent = k.open_jobs; $('kAvg').textContent = k.avg_risk; $('kCost').textContent = fmtINR(k.expected_cost);
+  const a = d.actions, tot = a.planned + a.in_progress + a.done; $('kActs').textContent = a.done + '/' + tot; $('kActsSub').textContent = a.in_progress + ' in progress · ' + a.planned + ' planned';
+
+  // trend
+  const t = d.trend; if (trend) trend.destroy();
+  trend = new Chart($('trendChart'), {data:{labels:t.labels, datasets:[
+    {type:'line', label:'Avg risk score', data:t.avg_risk, borderColor:'#7c5cfc', backgroundColor:'rgba(124,92,252,.14)', fill:true, tension:.35, yAxisID:'y', pointRadius:3},
+    {type:'bar', label:'High-risk employees', data:t.high_risk, backgroundColor:'rgba(229,72,77,.55)', borderRadius:4, yAxisID:'y1'},
+    {type:'line', label:'Actual exits', data:t.exits, borderColor:'#f5a524', borderDash:[5,4], tension:.3, yAxisID:'y1', pointRadius:2}]},
+    options:{maintainAspectRatio:false, interaction:{mode:'index', intersect:false}, plugins:{legend:{position:'bottom'}},
+      scales:{y:{beginAtZero:true, title:{display:true, text:'Avg risk'}}, y1:{beginAtZero:true, position:'right', grid:{drawOnChartArea:false}, ticks:{precision:0}}, x:{ticks:{maxRotation:0, autoSkip:true}}}}});
+
+  // distribution
+  if (dist) dist.destroy();
+  dist = new Chart($('distChart'), {type:'doughnut', data:{labels:d.distribution.labels, datasets:[{data:d.distribution.counts, backgroundColor:['#30a46c','#f5a524','#e5484d'], borderWidth:0}]},
+    options:{maintainAspectRatio:false, cutout:'66%', plugins:{legend:{display:false}}}});
+  const icons = ['🟢','🟡','🔴'];
+  $('distLegend').innerHTML = d.distribution.labels.map((l, i) => `<div class="d-flex justify-content-between border-bottom py-2"><span>${icons[i]} ${l}</span><strong>${d.distribution.pct[i]}% <span class="text-muted fw-normal small">(${d.distribution.counts[i]})</span></strong></div>`).join('');
+
+  // departments
+  const colors = {High:'#e5484d', Medium:'#f5a524', Low:'#30a46c'}; if (dept) dept.destroy();
+  dept = new Chart($('deptChart'), {type:'bar', data:{labels:d.dept_risk.map(x => x.name + '  ·  ' + x.level), datasets:[{data:d.dept_risk.map(x => x.avg), backgroundColor:d.dept_risk.map(x => colors[x.level]), borderRadius:6}]},
+    options:{indexAxis:'y', maintainAspectRatio:false, plugins:{legend:{display:false}, tooltip:{callbacks:{label:c => { const x = d.dept_risk[c.dataIndex]; return `Avg ${x.avg}/100 · ${x.high} high-risk of ${x.headcount} (${x.high_pct}%)`; }}}}, scales:{x:{beginAtZero:true, max:100}}}});
+
+  // top list
+  $('topNote').textContent = $('fRisk').value ? '(' + $('fRisk').value + ' risk only)' : '';
+  $('topRows').innerHTML = d.top.length ? d.top.map(r => `<tr><td><div class="fw-semibold">${esc(r.name)}</div><div class="small text-muted">${esc(r.role)}</div></td><td>${esc(r.dept)}</td><td class="small">${esc(r.factor)}</td>
+    <td><div class="d-flex align-items-center gap-2"><div class="bar-track flex-grow-1"><div class="bar-fill" style="width:${r.score}%;background:${riskColor(r.score)}"></div></div><span class="badge badge-risk-${r.level}">${r.score}</span></div></td>
+    <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="${r.url}">Risk card</a></td></tr>`).join('') : '<tr><td colspan="5" class="text-center text-muted py-4">No employees match these filters.</td></tr>';
+  $('loading').textContent = '';
+}
+['fDept','fRisk','fFrom','fTo'].forEach(i => $(i).addEventListener('change', load));
+document.querySelectorAll('[data-range]').forEach(b => b.addEventListener('click', () => { const d = new Date(); d.setMonth(d.getMonth() - parseInt(b.dataset.range)); $('fFrom').value = d.toISOString().slice(0,10); $('fTo').value = ''; load(); }));
+$('fReset').addEventListener('click', () => { ['fDept','fRisk','fFrom','fTo'].forEach(i => $(i).value = ''); load(); });
+load();
+</script>
+{% endblock %}
