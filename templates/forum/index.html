@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Forum{% endblock %}
+{% block content %}
+<div class="page-head"><h4><i class="bi bi-chat-dots"></i> Community forum</h4><a href="{{ url_for('forum.create') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-circle"></i> New post</a></div>
+<div class="row g-3"><div class="col-lg-8">
+  <form class="d-flex gap-2 mb-2"><input name="q" value="{{ search }}" class="form-control form-control-sm" placeholder="Search discussions…"><button class="btn btn-sm btn-outline-primary">Search</button></form>
+  <div class="mb-3"><a class="chip {{ 'border-primary text-primary' if not category }}" href="{{ url_for('forum.index') }}">All</a>{% for c in categories %}<a class="chip {{ 'border-primary text-primary' if category==c.name }}" href="?category={{ c.name }}">#{{ c.name }}</a>{% endfor %}</div>
+  {% for p in posts %}<div class="card-soft p-3 mb-2 {{ 'pin' if p.is_announcement }}"><div class="d-flex justify-content-between align-items-start gap-2">
+    <div>{% if p.is_announcement %}<span class="badge bg-primary me-1"><i class="bi bi-megaphone"></i> HR announcement</span>{% endif %}<a href="{{ url_for('forum.view_post', post_id=p.id) }}" class="fw-bold text-decoration-none">{{ p.title }}</a></div>
+    {% if p.category %}<span class="badge bg-secondary-subtle text-secondary-emphasis">#{{ p.category.name }}</span>{% endif %}</div>
+    <div class="text-muted small mt-1">{{ 'Anonymous' if p.is_anonymous else p.author.name }} · {{ p.created_at.strftime('%d %b %Y') }} · <i class="bi bi-heart"></i> {{ p.like_count }} · <i class="bi bi-chat"></i> {{ p.comment_count }}</div></div>
+  {% else %}<p class="text-muted">No posts found.</p>{% endfor %}</div>
+  <div class="col-lg-4"><div class="card-soft p-3"><h6 class="fw-bold">🔥 Trending discussions</h6>{% for p in trending %}<a href="{{ url_for('forum.view_post', post_id=p.id) }}" class="d-block small text-decoration-none border-bottom py-2">{{ p.title }}<div class="text-muted">{{ p.like_count }} likes · {{ p.comment_count }} comments</div></a>{% else %}<p class="small text-muted mb-0">Nothing trending yet.</p>{% endfor %}</div></div></div>
+{% endblock %}
