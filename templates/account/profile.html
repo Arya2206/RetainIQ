@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}My account{% endblock %}
+{% block content %}
+<div class="page-head"><h4>My account</h4></div>
+<div class="row g-3"><div class="col-lg-6"><div class="card-soft p-4">
+  <div class="d-flex align-items-center gap-3 mb-3"><span class="avatar" style="width:56px;height:56px;font-size:1.2rem">{{ current_user.initials }}</span>
+    <div><div class="fw-bold fs-5">{{ current_user.name }}</div><div class="text-muted">{{ current_user.email }}</div></div></div>
+  <table class="table table-sm mb-0"><tbody>
+    <tr><th class="text-muted">Role</th><td>{{ current_user.role_label }}</td></tr>
+    <tr><th class="text-muted">Department</th><td>{{ current_user.department.name if current_user.department else '—' }}</td></tr>
+    <tr><th class="text-muted">Reports to</th><td>{{ current_user.manager.name if current_user.manager else '—' }}</td></tr>
+    <tr><th class="text-muted">Last sign-in</th><td>{{ current_user.last_login_at.strftime('%d %b %Y, %H:%M UTC') if current_user.last_login_at else '—' }}</td></tr>
+    <tr><th class="text-muted">Member since</th><td>{{ current_user.created_at.strftime('%d %b %Y') }}</td></tr></tbody></table>
+  <a href="{{ url_for('account.password') }}" class="btn btn-outline-primary btn-sm mt-3"><i class="bi bi-key"></i> Change password</a>
+</div></div>
+<div class="col-lg-6"><div class="card-soft p-4"><h6 class="fw-bold"><i class="bi bi-shield-check text-success"></i> Your security</h6>
+  <ul class="small text-muted mb-0"><li>Passwords are stored as salted hashes — nobody, including administrators, can read them.</li>
+  <li>Your session expires after 2 hours of inactivity.</li><li>Five failed sign-ins lock the account for 15 minutes.</li>
+  <li>Your sign-ins and actions are recorded in the audit log.</li></ul></div></div></div>
+{% endblock %}
