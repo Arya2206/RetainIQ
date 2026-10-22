@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<div class="page-head"><div><h4><i class="bi bi-people"></i> User management</h4><div class="sub">{{ users|length }} account(s)</div></div>
+  <form class="d-flex gap-2"><input name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Search name or email">
+  <select name="role" class="form-select form-select-sm" onchange="this.form.submit()"><option value="">All roles</option>{% for v,l in role_choices %}<option value="{{ v }}" {{ 'selected' if role_filter==v }}>{{ l }}</option>{% endfor %}</select><button class="btn btn-sm btn-outline-primary">Filter</button></form></div>
+<div class="row g-3">
+  <div class="col-xl-3"><div class="card-soft p-3"><h6 class="fw-bold mb-3"><i class="bi bi-person-plus"></i> Create user</h6>
+    <form method="POST" action="{{ url_for('admin.create_user') }}">{{ csrf_input() }}
+      <input class="form-control form-control-sm mb-2" name="name" placeholder="Full name" required>
+      <input type="email" class="form-control form-control-sm mb-2" name="email" placeholder="Email" required>
+      <select class="form-select form-select-sm mb-2" name="role">{% for v,l in role_choices %}<option value="{{ v }}">{{ l }}</option>{% endfor %}</select>
+      <select class="form-select form-select-sm mb-2" name="department_id"><option value="">Department…</option>{% for d in departments %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}</select>
+      <input class="form-control form-control-sm mb-1" name="password" placeholder="Temporary password (blank = auto-generate)">
+      <div class="form-text mb-2">The user must change it at first sign-in.</div>
+      <button class="btn btn-primary btn-sm w-100">Create user</button></form></div></div>
+  <div class="col-xl-9"><div class="card-soft p-3"><div class="table-responsive"><table class="table table-sm align-middle mb-0">
+    <thead><tr><th>User</th><th>Role</th><th>Department</th><th>Reports to</th><th>Status</th><th class="text-end">Actions</th></tr></thead><tbody>
+    {% for u in users %}<tr>
+      <td><div class="d-flex align-items-center gap-2"><span class="avatar">{{ u.initials }}</span><div><div class="fw-semibold">{{ u.name }}</div><div class="text-muted small">{{ u.email }}</div></div></div></td>
+      <td><span class="badge bg-secondary-subtle text-secondary-emphasis">{{ u.role_label }}</span></td>
+      <td class="small">{{ u.department.name if u.department else '—' }}</td>
+      <td class="small">{{ u.manager.name if u.manager else '—' }}</td>
+      <td>{% if u.is_locked %}<span class="badge bg-warning text-dark">Locked</span>{% elif u.is_active_flag %}<span class="badge bg-success">Active</span>{% else %}<span class="badge bg-danger">Disabled</span>{% endif %}</td>
+      <td class="text-end text-nowrap">
+        <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#edit{{ u.id }}" title="Edit role / team"><i class="bi bi-pencil"></i></button>
+        <form method="POST" action="{{ url_for('admin.reset_password', uid=u.id) }}" class="d-inline" onsubmit="return confirm('Generate a new temporary password for {{ u.name }}?')">{{ csrf_input() }}<button class="btn btn-sm btn-outline-secondary" title="Reset password"><i class="bi bi-key"></i></button></form>
+        {% if u.is_locked %}<form method="POST" action="{{ url_for('admin.unlock_user', uid=u.id) }}" class="d-inline">{{ csrf_input() }}<button class="btn btn-sm btn-outline-warning" title="Unlock"><i class="bi bi-unlock"></i></button></form>{% endif %}
+        <form method="POST" action="{{ url_for('admin.toggle_user', uid=u.id) }}" class="d-inline">{{ csrf_input() }}<button class="btn btn-sm btn-outline-{{ 'danger' if u.is_active_flag else 'success' }}" title="{{ 'Disable' if u.is_active_flag else 'Enable' }}"><i class="bi bi-{{ 'slash-circle' if u.is_active_flag else 'check-circle' }}"></i></button></form>
+      </td></tr>
+      <div class="modal fade" id="edit{{ u.id }}" tabindex="-1"><div class="modal-dialog"><form class="modal-content" method="POST" action="{{ url_for('admin.update_user', uid=u.id) }}">{{ csrf_input() }}
+        <div class="modal-header"><h6 class="modal-title">Edit {{ u.name }}</h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body"><label class="form-label small">Role</label><select class="form-select mb-2" name="role">{% for v,l in role_choices %}<option value="{{ v }}" {{ 'selected' if u.role==v }}>{{ l }}</option>{% endfor %}</select>
+          <label class="form-label small">Department</label><select class="form-select mb-2" name="department_id"><option value="">—</option>{% for d in departments %}<option value="{{ d.id }}" {{ 'selected' if u.department_id==d.id }}>{{ d.name }}</option>{% endfor %}</select>
+          <label class="form-label small">Reporting manager</label><select class="form-select" name="manager_id"><option value="">—</option>{% for m in managers if m.id != u.id %}<option value="{{ m.id }}" {{ 'selected' if u.manager_id==m.id }}>{{ m.name }} ({{ m.role_label }})</option>{% endfor %}</select></div>
+        <div class="modal-footer"><button class="btn btn-primary">Save changes</button></div></form></div></div>
+    {% endfor %}</tbody></table></div></div></div>
+</div>
+{% endblock %}

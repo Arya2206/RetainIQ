@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Roles & Permissions{% endblock %}
+{% block content %}
+<div class="page-head"><div><h4><i class="bi bi-shield-lock"></i> Roles &amp; permissions</h4>
+  <div class="sub">Two-layer authorisation: a role opens an <em>area</em>; permissions control the <em>actions</em> inside it. Changes apply instantly. Administrator always has every permission.</div></div></div>
+<form method="POST">{{ csrf_input() }}
+<div class="card-soft p-3"><div class="table-responsive"><table class="table table-sm perm-grid align-middle mb-3">
+  <thead><tr><th>Permission</th>{% for r in roles %}<th>{{ role_labels[r] }}</th>{% endfor %}</tr></thead><tbody>
+  {% for key, label in permissions.items() %}<tr><td><div class="fw-semibold small">{{ label }}</div><code class="small text-muted">{{ key }}</code></td>
+    {% for r in roles %}<td>{% if r == 'super_admin' %}<i class="bi bi-lock-fill text-success" title="Always granted"></i>
+      {% else %}<div class="form-check d-inline-block m-0"><input class="form-check-input" type="checkbox" name="{{ r }}:{{ key }}" {{ 'checked' if (r, key) in granted }} aria-label="{{ role_labels[r] }} {{ key }}"></div>{% endif %}</td>{% endfor %}</tr>{% endfor %}
+  </tbody></table></div>
+  <div class="d-flex gap-2"><button class="btn btn-primary"><i class="bi bi-save"></i> Save permissions</button>
+  <button class="btn btn-outline-secondary" name="reset" value="1" onclick="return confirm('Reset every role to its default permissions?')">Reset to defaults</button></div></div>
+</form>
+{% endblock %}

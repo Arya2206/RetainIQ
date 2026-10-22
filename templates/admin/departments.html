@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Departments{% endblock %}
+{% block content %}
+<div class="page-head"><h4><i class="bi bi-diagram-3"></i> Departments</h4></div>
+<div class="row g-3"><div class="col-lg-4"><div class="card-soft p-3"><h6 class="fw-bold mb-3">Add department</h6>
+  <form method="POST">{{ csrf_input() }}<input class="form-control form-control-sm mb-2" name="name" placeholder="e.g. Legal" required maxlength="80"><button class="btn btn-primary btn-sm w-100">Add</button></form></div></div>
+<div class="col-lg-8"><div class="card-soft p-3"><table class="table table-sm mb-0"><thead><tr><th>Name</th><th>Employees</th></tr></thead><tbody>
+  {% for d in departments %}<tr><td>{{ d.name }}</td><td>{{ counts.get(d.id, 0) }}</td></tr>{% endfor %}</tbody></table></div></div></div>
+{% endblock %}
