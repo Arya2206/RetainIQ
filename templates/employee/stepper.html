@@ -1,0 +1,8 @@
+{% macro stepper(a, flow, labels) %}
+<div class="stepper">{% for s in flow %}
+  {% set idx = a.stage_index %}
+  <div class="step {{ 'fail' if a.status=='rejected' and loop.index0 == 0 else ('done' if loop.index0 < idx else ('current' if loop.index0 == idx and a.status != 'rejected' else '')) }}">
+    <span class="dot">{% if loop.index0 < idx %}<i class="bi bi-check"></i>{% else %}{{ loop.index }}{% endif %}</span><div>{{ labels[s] }}</div></div>{% endfor %}</div>
+{% if a.status == 'rejected' %}<div class="small text-danger mt-1"><i class="bi bi-x-circle"></i> Not selected for this role</div>{% endif %}
+{% if a.status in ('accepted','declined') %}<div class="small mt-1 {{ 'text-success' if a.status=='accepted' else 'text-muted' }}"><i class="bi bi-flag"></i> {{ labels[a.status] }}</div>{% endif %}
+{% endmacro %}
